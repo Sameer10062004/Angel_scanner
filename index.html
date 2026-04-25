@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>OI Scanner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
+
+:root {
+–bg:      #04070A;
+–panel:   #080D12;
+–card:    #0C1219;
+–border:  #141E28;
+–border2: #1E2D3D;
+–green:   #00FFB2;
+–red:     #FF3B5C;
+–yellow:  #FFB800;
+–blue:    #00B4FF;
+–dim:     #3D5A73;
+–text:    #D4E8F7;
+–sub:     #4A6B85;
+–mono:    ‘IBM Plex Mono’, monospace;
+–display: ‘Bebas Neue’, sans-serif;
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: var(–mono);
+min-height: 100vh;
+}
+
+.hdr {
+position: sticky; top: 0; z-index: 50;
+background: var(–bg);
+padding: 14px 16px 10px;
+display: flex; align-items: center; justify-content: space-between;
+border-bottom: 1px solid var(–border2);
+}
+
+.hdr-title {
+font-family: var(–display);
+font-size: 26px; letter-spacing: 2px;
+color: var(–green);
+line-height: 1;
+}
+
+.hdr-sub { font-size: 9px; color: var(–sub); letter-spacing: 2px; margin-top: 2px; }
+
+.hdr-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+
+.status-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(–sub); }
+
+.dot {
+width: 7px; height: 7px; border-radius: 50%;
+background: var(–dim); transition: background 0.3s;
+}
+
+.dot.live { background: var(–green); animation: blink 2s infinite; }
+.dot.err  { background: var(–red); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.expiry-tag {
+font-size: 9px; color: var(–yellow);
+background: rgba(255,184,0,0.08);
+padding: 2px 8px; border-radius: 4px;
+border: 1px solid rgba(255,184,0,0.2);
+letter-spacing: 1px;
+}
+
+.cfg {
+padding: 10px 16px;
+display: flex; align-items: center; gap: 8px;
+border-bottom: 1px solid var(–border);
+overflow-x: auto; scrollbar-width: none;
+}
+
+.cfg::-webkit-scrollbar { display: none; }
+
+.cfg-label { font-size: 9px; color: var(–sub); white-space: nowrap; letter-spacing: 1px; }
+
+.cfg-input {
+background: var(–card);
+border: 1px solid var(–border2);
+border-radius: 6px;
+color: var(–yellow);
+font-family: var(–mono);
+font-size: 11px; font-weight: 600;
+padding: 5px 10px;
+width: 80px; text-align: center; outline: none;
+}
+
+.cfg-input:focus { border-color: var(–green); }
+
+.cfg-sep { width: 1px; height: 20px; background: var(–border2); flex-shrink: 0; }
+
+.stats {
+display: grid; grid-template-columns: repeat(4, 1fr);
+gap: 1px; background: var(–border);
+border-bottom: 1px solid var(–border2);
+}
+
+.stat-cell { background: var(–panel); padding: 10px 12px; text-align: center; }
+
+.stat-val { font-family: var(–display); font-size: 22px; line-height: 1; color: var(–text); }
+.stat-val.g { color: var(–green); }
+.stat-val.r { color: var(–red); }
+.stat-val.y { color: var(–yellow); }
+
+.stat-lbl { font-size: 8px; color: var(–sub); letter-spacing: 1.5px; margin-top: 2px; }
+
+.content { padding: 12px 12px 80px; }
+
+.stock-card {
+background: var(–card);
+border: 1px solid var(–border2);
+border-radius: 12px;
+margin-bottom: 10px;
+overflow: hidden;
+}
+
+.stock-card.sig-ce   { border-color: rgba(0,255,178,0.3); }
+.stock-card.sig-pe   { border-color: rgba(255,59,92,0.3); }
+.stock-card.sig-both { border-color: rgba(255,184,0,0.3); }
+
+.card-hdr {
+padding: 10px 14px;
+display: flex; align-items: center; justify-content: space-between;
+border-bottom: 1px solid var(–border);
+}
+
+.card-left { display: flex; flex-direction: column; gap: 2px; }
+
+.stock-sym {
+font-family: var(–display);
+font-size: 20px; letter-spacing: 1px; line-height: 1;
+color: var(–text);
+}
+
+.stock-nm { font-size: 9px; color: var(–sub); }
+
+.sig-badge {
+display: inline-flex; align-items: center;
+padding: 3px 10px; border-radius: 20px;
+font-size: 10px; font-weight: 700;
+letter-spacing: 1.5px; border: 1px solid;
+margin-top: 4px;
+}
+
+.badge-ce   { color: var(–green); border-color: rgba(0,255,178,0.4); background: rgba(0,255,178,0.07); }
+.badge-pe   { color: var(–red);   border-color: rgba(255,59,92,0.4); background: rgba(255,59,92,0.07); }
+.badge-both { color: var(–yellow);border-color: rgba(255,184,0,0.4); background: rgba(255,184,0,0.07); }
+.badge-watch{ color: var(–sub);   border-color: var(–border2); background: transparent; }
+
+.card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+
+.ltp-val {
+font-family: var(–display);
+font-size: 24px; color: var(–blue); line-height: 1;
+}
+
+.hl-row { display: flex; gap: 8px; }
+.hl-h { font-size: 9px; color: var(–green); }
+.hl-l { font-size: 9px; color: var(–red); }
+
+.score-row {
+padding: 6px 14px;
+display: flex; align-items: center; gap: 8px;
+border-bottom: 1px solid var(–border);
+}
+
+.score-label { font-size: 8px; color: var(–sub); letter-spacing: 1px; white-space: nowrap; }
+
+.score-track { flex: 1; height: 3px; background: var(–border2); border-radius: 2px; overflow: hidden; }
+
+.score-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+.score-num { font-size: 10px; font-weight: 600; min-width: 28px; text-align: right; }
+
+.opts-grid {
+display: grid; grid-template-columns: 1fr 1fr;
+gap: 1px; background: var(–border);
+}
+
+.opt-col { background: var(–card); padding: 10px 12px; }
+
+.opt-hdr {
+font-size: 9px; font-weight: 700;
+letter-spacing: 2px; margin-bottom: 8px;
+display: flex; align-items: center; gap: 6px;
+}
+
+.opt-hdr.ce { color: var(–green); }
+.opt-hdr.pe { color: var(–red); }
+
+.opt-hdr::after { content: ‘’; flex: 1; height: 1px; background: var(–border2); }
+
+.strike-row {
+display: flex; align-items: center; justify-content: space-between;
+padding: 5px 0; border-bottom: 1px solid var(–border);
+font-size: 11px;
+}
+
+.strike-row:last-child { border-bottom: none; }
+
+.s-num { color: var(–sub); font-weight: 500; }
+.s-prem { font-weight: 700; }
+.s-prem.ce { color: var(–green); }
+.s-prem.pe { color: var(–red); }
+.s-oi { font-size: 9px; color: var(–dim); }
+
+.center-msg { text-align: center; padding: 60px 20px; color: var(–sub); font-size: 12px; letter-spacing: 1px; }
+
+.spinner {
+width: 36px; height: 36px; border-radius: 50%;
+border: 2px solid var(–border2);
+border-top-color: var(–green);
+animation: spin 0.8s linear infinite;
+margin: 0 auto 14px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.last-bar {
+position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+background: var(–card); border: 1px solid var(–border2);
+border-radius: 20px; padding: 6px 16px;
+font-size: 9px; color: var(–sub); letter-spacing: 1px;
+white-space: nowrap; z-index: 40;
+}
+
+.setup-wrap { max-width: 480px; margin: 60px auto; padding: 24px; background: var(–card); border: 1px solid var(–border2); border-radius: 16px; text-align: center; }
+
+.setup-title { font-family: var(–display); font-size: 28px; color: var(–green); margin-bottom: 8px; letter-spacing: 2px; }
+
+.setup-sub { font-size: 11px; color: var(–sub); margin-bottom: 20px; line-height: 1.6; }
+
+.setup-input {
+width: 100%; padding: 10px 14px;
+background: var(–panel); border: 1px solid var(–border2);
+border-radius: 8px; color: var(–text);
+font-family: var(–mono); font-size: 12px;
+outline: none; margin-bottom: 12px;
+}
+
+.setup-input:focus { border-color: var(–green); }
+
+.setup-btn {
+width: 100%; padding: 12px;
+background: rgba(0,255,178,0.1);
+border: 1px solid var(–green); border-radius: 8px;
+color: var(–green); font-family: var(–mono);
+font-size: 12px; font-weight: 700; letter-spacing: 2px;
+cursor: pointer;
+}
+
+.server-btn {
+background: transparent; border: 1px solid var(–border2);
+border-radius: 6px; color: var(–sub); font-family: var(–mono);
+font-size: 9px; padding: 5px 10px; cursor: pointer;
+letter-spacing: 1px; white-space: nowrap;
+}
+</style>
+
+</head>
+<body>
+
+<div id="setup-screen" style="padding:20px; display:none">
+  <div class="setup-wrap">
+    <div class="setup-title">OI SCANNER</div>
+    <div class="setup-sub">Enter your Render server URL to connect to Angel One live data.</div>
+    <input class="setup-input" id="server-url" type="url" placeholder="https://angel-scanner.onrender.com">
+    <button class="setup-btn" onclick="saveServer()">CONNECT</button>
+  </div>
+</div>
+
+<div id="main-app" style="display:none">
+
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">OI SCANNER</div>
+      <div class="hdr-sub">ANGEL ONE / NSE OPTIONS</div>
+    </div>
+    <div class="hdr-right">
+      <div class="status-row">
+        <div class="dot" id="dot"></div>
+        <span id="status-txt">CONNECTING</span>
+      </div>
+      <div class="expiry-tag" id="expiry-tag">EXPIRY --</div>
+    </div>
+  </div>
+
+  <div class="cfg">
+    <span class="cfg-label">REFRESH</span>
+    <input class="cfg-input" id="refresh-rate" type="number" value="5" min="5" max="60">
+    <span class="cfg-label">sec</span>
+    <div class="cfg-sep"></div>
+    <span class="cfg-label">MIN SCORE</span>
+    <input class="cfg-input" id="min-score" type="number" value="10" min="0" max="100">
+    <div class="cfg-sep"></div>
+    <button class="server-btn" onclick="resetServer()">SERVER</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-cell">
+      <div class="stat-val" id="stat-total">--</div>
+      <div class="stat-lbl">ACTIVE</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val g" id="stat-ce">--</div>
+      <div class="stat-lbl">CE SELL</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val r" id="stat-pe">--</div>
+      <div class="stat-lbl">PE SELL</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val y" id="stat-both">--</div>
+      <div class="stat-lbl">BOTH</div>
+    </div>
+  </div>
+
+  <div class="content" id="cards"></div>
+  <div class="last-bar" id="last-bar">--</div>
+
+</div>
+
+<script>
+var SERVER_URL = localStorage.getItem('oi_server') || '';
+var scanTimer = null;
+var lastData = [];
+
+function init() {
+  if (SERVER_URL) {
+    document.getElementById('server-url').value = SERVER_URL;
+    showApp();
+  } else {
+    showSetup();
+  }
+}
+
+function showSetup() {
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  startScan();
+}
+
+function saveServer() {
+  var url = document.getElementById('server-url').value.trim().replace(/\/$/, '');
+  if (!url) return;
+  SERVER_URL = url;
+  localStorage.setItem('oi_server', url);
+  showApp();
+}
+
+function resetServer() {
+  clearInterval(scanTimer);
+  SERVER_URL = '';
+  localStorage.removeItem('oi_server');
+  showSetup();
+}
+
+function setStatus(state, text) {
+  document.getElementById('dot').className = 'dot ' + state;
+  document.getElementById('status-txt').textContent = text;
+}
+
+function fmt(n) {
+  if (!n && n !== 0) return '--';
+  if (n >= 10000000) return (n / 10000000).toFixed(1) + 'Cr';
+  if (n >= 100000)   return (n / 100000).toFixed(1) + 'L';
+  if (n >= 1000)     return (n / 1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+function scoreCol(s) {
+  if (s >= 65) return 'var(--green)';
+  if (s >= 35) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function badgeClass(sig) {
+  if (sig === 'CE SELL')     return 'badge-ce';
+  if (sig === 'PE SELL')     return 'badge-pe';
+  if (sig === 'BOTH ACTIVE') return 'badge-both';
+  return 'badge-watch';
+}
+
+function cardClass(sig) {
+  if (sig === 'CE SELL')     return 'sig-ce';
+  if (sig === 'PE SELL')     return 'sig-pe';
+  if (sig === 'BOTH ACTIVE') return 'sig-both';
+  return '';
+}
+
+function strikeHtml(s, type) {
+  if (!s) return '';
+  return '<div class="strike-row">' +
+    '<span class="s-num">' + (s.strike ? s.strike.toLocaleString('en-IN') : '--') + '</span>' +
+    '<span class="s-prem ' + type + '">Rs ' + (s.premium ? s.premium.toFixed(2) : '--') + '</span>' +
+    '<span class="s-oi">' + fmt(s.oi) + '</span>' +
+    '</div>';
+}
+
+function renderCards(stocks) {
+  var el = document.getElementById('cards');
+  if (!stocks || !stocks.length) {
+    el.innerHTML = '<div class="center-msg"><div>No stocks above score threshold</div><div style="margin-top:6px;font-size:10px">Lower MIN SCORE or wait for market activity</div></div>';
+    return;
+  }
+
+  el.innerHTML = stocks.map(function(s) {
+    var sc = s.score || 0;
+    var ceRows = (s.ce || []).map(function(c) { return strikeHtml(c, 'ce'); }).join('');
+    var peRows = (s.pe || []).map(function(p) { return strikeHtml(p, 'pe'); }).join('');
+    return '<div class="stock-card ' + cardClass(s.signal) + '">' +
+      '<div class="card-hdr">' +
+        '<div class="card-left">' +
+          '<div class="stock-sym">' + s.symbol + '</div>' +
+          '<div class="stock-nm">' + s.name + '</div>' +
+          '<div class="sig-badge ' + badgeClass(s.signal) + '">' + s.signal + '</div>' +
+        '</div>' +
+        '<div class="card-right">' +
+          '<div class="ltp-val">Rs ' + (s.ltp ? s.ltp.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) : '--') + '</div>' +
+          '<div class="hl-row">' +
+            '<span class="hl-h">H: ' + (s.high ? s.high.toLocaleString('en-IN', {maximumFractionDigits:2}) : '--') + '</span>' +
+            '<span class="hl-l">L: ' + (s.low ? s.low.toLocaleString('en-IN', {maximumFractionDigits:2}) : '--') + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="score-row">' +
+        '<span class="score-label">ACTIVITY SCORE</span>' +
+        '<div class="score-track"><div class="score-fill" style="width:' + sc + '%;background:' + scoreCol(sc) + '"></div></div>' +
+        '<span class="score-num" style="color:' + scoreCol(sc) + '">' + sc + '</span>' +
+      '</div>' +
+      '<div class="opts-grid">' +
+        '<div class="opt-col"><div class="opt-hdr ce">CE CALL</div>' + (ceRows || '<div style="font-size:10px;color:var(--sub)">No data</div>') + '</div>' +
+        '<div class="opt-col"><div class="opt-hdr pe">PE PUT</div>'  + (peRows || '<div style="font-size:10px;color:var(--sub)">No data</div>') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function fetchScan() {
+  try {
+    setStatus('', 'SCANNING');
+    var minScore = parseInt(document.getElementById('min-score').value) || 10;
+    var res = await fetch(SERVER_URL + '/api/scan');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    lastData = data.stocks || [];
+    renderCards(lastData.filter(function(s) { return s.score >= minScore; }));
+
+    document.getElementById('expiry-tag').textContent = 'EXP ' + (data.expiry || '--');
+    document.getElementById('last-bar').textContent = 'UPDATED ' + new Date().toLocaleTimeString('en-IN') + '  /  ' + (data.total || 0) + ' STOCKS SCANNED';
+
+    document.getElementById('stat-total').textContent = lastData.length;
+    document.getElementById('stat-ce').textContent    = lastData.filter(function(s) { return s.signal === 'CE SELL'; }).length;
+    document.getElementById('stat-pe').textContent    = lastData.filter(function(s) { return s.signal === 'PE SELL'; }).length;
+    document.getElementById('stat-both').textContent  = lastData.filter(function(s) { return s.signal === 'BOTH ACTIVE'; }).length;
+
+    setStatus('live', 'LIVE');
+  } catch (e) {
+    setStatus('err', 'ERROR');
+    document.getElementById('cards').innerHTML = '<div class="center-msg"><div style="color:var(--red);margin-bottom:8px">' + e.message + '</div><div>Check server URL</div></div>';
+  }
+}
+
+function startScan() {
+  document.getElementById('cards').innerHTML = '<div class="center-msg"><div class="spinner"></div><div>Scanning option chain...</div></div>';
+  fetchScan();
+  var rate = (parseInt(document.getElementById('refresh-rate').value) || 5) * 1000;
+  clearInterval(scanTimer);
+  scanTimer = setInterval(fetchScan, rate);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('refresh-rate').addEventListener('change', function() {
+    if (SERVER_URL) startScan();
+  });
+  document.getElementById('min-score').addEventListener('change', function() {
+    var minScore = parseInt(document.getElementById('min-score').value) || 10;
+    renderCards(lastData.filter(function(s) { return s.score >= minScore; }));
+  });
+  init();
+});
+</script>
+
+</body>
+</html>
