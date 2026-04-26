@@ -12,7 +12,7 @@ const CLIENT_ID   = process.env.CLIENT_ID;
 const CLIENT_PIN  = process.env.CLIENT_PIN;
 const TOTP_SECRET = process.env.TOTP_SECRET;
 
-const BASE = ‘https://apiconnect.angelbroking.com’;
+const BASE = 'https://apiconnect.angelbroking.com';
 
 let session = { token: null, expiry: 0 };
 
