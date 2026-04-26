@@ -31,7 +31,11 @@ try {
 const otpCode = generateTOTP();
 const res = await axios.post(
 BASE + ‘/rest/auth/angelbroking/user/v1/loginByPassword’,
-{ clientcode: CLIENT_ID, password: CLIENT_PIN, totp: otpCode },
+{
+clientcode: CLIENT_ID,
+password: CLIENT_PIN,
+totp: otpCode
+},
 {
 headers: {
 ‘Content-Type’: ‘application/json’,
@@ -169,7 +173,11 @@ var top = ce.slice(0, 5).concat(pe.slice(0, 5));
 var oi    = top.reduce(function(a, s) { return a + (s.openInterest || 0); }, 0);
 var oichg = top.reduce(function(a, s) { return a + Math.abs(s.changeinOpenInterest || 0); }, 0);
 var vol   = top.reduce(function(a, s) { return a + (s.totalTradedVolume || 0); }, 0);
-return Math.round(Math.min(oi / 1000000, 40) + Math.min(oichg / 100000, 30) + Math.min(vol / 500000, 30));
+return Math.round(
+Math.min(oi / 1000000, 40) +
+Math.min(oichg / 100000, 30) +
+Math.min(vol / 500000, 30)
+);
 }
 
 function getSignal(ce, pe) {
@@ -194,7 +202,10 @@ return {
 strike:  s.strikePrice,
 premium: s.lastPrice || 0,
 oi:      s.openInterest || 0,
-score:   Math.max(0, 500 - Math.abs(s.strikePrice - ltp)) + (s.openInterest || 0) / 10000 + Math.abs(s.changeinOpenInterest || 0) / 1000 + (s.totalTradedVolume || 0) / 10000
+score:   Math.max(0, 500 - Math.abs(s.strikePrice - ltp)) +
+(s.openInterest || 0) / 10000 +
+Math.abs(s.changeinOpenInterest || 0) / 1000 +
+(s.totalTradedVolume || 0) / 10000
 };
 });
 scored.sort(function(a, b) { return b.score - a.score; });
@@ -249,7 +260,9 @@ return null;
 }
 }));
 batchResults.forEach(function(r) { if (r) results.push(r); });
-if (i + 5 < STOCKS.length) await new Promise(function(r) { setTimeout(r, 300); });
+if (i + 5 < STOCKS.length) {
+await new Promise(function(r) { setTimeout(r, 300); });
+}
 }
 
 results.sort(function(a, b) { return b.score - a.score; });
